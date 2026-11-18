@@ -7,7 +7,7 @@ A low-power, monochrome Home Assistant dashboard for the **Seeed Studio reTermin
 ```text
 ├── .gitignore
 ├── README.md
-├── esphome-reterminal-e1003.yaml
+├── esphomeCode.md
 ├── reterminal-e1003-dashboard.yaml
 ├── reterminal_e1003_package.yaml
 └── secrets.yaml.example
@@ -55,7 +55,7 @@ A low-power, monochrome Home Assistant dashboard for the **Seeed Studio reTermin
 
 ### Step Four: Flash the ESPHome Firmware
 
-1. Create or open your `reterminal-e1003` device configuration in **ESPHome Builder** and paste the full contents of `esphome-reterminal-e1003.yaml`.
+1. Create or open your `reterminal-e1003` device configuration in **ESPHome Builder** and paste the full contents of `esphomeCode.md`.
 2. Click **Validate** to verify that all secrets resolve cleanly.
 3. Flash the initial build over USB-C; subsequent updates can be flashed wirelessly over OTA by switching `input_boolean.eink_reterminal_enable_deepsleep` **off** first.
 
