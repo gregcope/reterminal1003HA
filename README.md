@@ -4,15 +4,14 @@ A low-power, monochrome Home Assistant dashboard for the **Seeed Studio reTermin
 
 ## Repository Structure
 
-~~~text
+```text
+├── .gitignore
 ├── README.md
-├── dashboard/
-│   └── reterminal-e1003.yaml
-├── esphome/
-│   └── reterminal-e1003.yaml
-└── home-assistant/
-    └── reterminal_e1003_package.yaml
-~~~
+├── esphome-reterminal-e1003.yaml
+├── reterminal-e1003-dashboard.yaml
+├── reterminal_e1003_package.yaml
+└── secrets.yaml.example
+```
 
 ## Prerequisites
 
@@ -27,11 +26,11 @@ A low-power, monochrome Home Assistant dashboard for the **Seeed Studio reTermin
 ### Step One: Add Home Assistant Helpers, REST Command and Automation
 
 1. Enable packages in your Home Assistant `configuration.yaml` if not already enabled:
-   ~~~yaml
+   ```yaml
    homeassistant:
      packages: !include_dir_named packages
-   ~~~
-2. Copy `home-assistant/reterminal_e1003_package.yaml` into `/config/packages/reterminal_e1003_package.yaml`.
+   ```
+2. Copy `reterminal_e1003_package.yaml` into `/config/packages/reterminal_e1003_package.yaml`.
 3. Update `192.168.86.52:5000` in `rest_command.trigger_reterminal_renderer` if your Home Assistant host uses a different IPv4 address.
 4. Restart Home Assistant (or reload YAML configurations under **Developer Tools > YAML**).
 
@@ -39,17 +38,25 @@ A low-power, monochrome Home Assistant dashboard for the **Seeed Studio reTermin
 
 1. In Home Assistant, go to **Settings > Dashboards > Add Dashboard**, set the title to **reTerminal E1003** and set the URL path to `reterminal-e1003`.
 2. Open `http://<YOUR_HA_IP>:8123/reterminal-e1003/main?disable_km`, click the pencil **Edit** icon, open the three-dot menu in the top-right corner and select **Raw configuration editor**.
-3. Paste the full contents of `dashboard/reterminal-e1003.yaml`, substitute any sensor entity IDs specific to your home and click **Save**.
+3. Paste the full contents of `reterminal-e1003-dashboard.yaml`, substitute any sensor entity IDs specific to your home and click **Save**.
 
-### Step Three: Flash the ESPHome Firmware
+### Step Three: Create `secrets.yaml` from the Template
 
-1. Open **ESPHome Builder** in Home Assistant and ensure your `secrets.yaml` defines three entries:
-   ~~~yaml
+1. Copy `secrets.yaml.example` to `secrets.yaml` (or open **Secrets** in the top-right corner of **ESPHome Builder** in Home Assistant).
+2. Replace the four placeholder values with your own details:
+   ```yaml
    wifi_ssid: "YOUR_WIFI_SSID"
    wifi_password: "YOUR_WIFI_PASSWORD"
+   ha_ip: "192.168.1.100"
    api_key: "YOUR_32_BYTE_BASE64_API_KEY"
-   ~~~
-2. Create or open your `reterminal-e1003` device configuration and paste the full contents of `esphome/reterminal-e1003.yaml` (updating `dashboard_renderer_host` if required).
+   ```
+   - `ha_ip` must be the numeric IPv4 address of the host running **Lovelace Kindle Screensaver** on port `5000`.
+   - `secrets.yaml` is excluded in `.gitignore` so credentials are never committed to GitHub.
+
+### Step Four: Flash the ESPHome Firmware
+
+1. Create or open your `reterminal-e1003` device configuration in **ESPHome Builder** and paste the full contents of `esphome-reterminal-e1003.yaml`.
+2. Click **Validate** to verify that all secrets resolve cleanly.
 3. Flash the initial build over USB-C; subsequent updates can be flashed wirelessly over OTA by switching `input_boolean.eink_reterminal_enable_deepsleep` **off** first.
 
 ## Operation and Controls
