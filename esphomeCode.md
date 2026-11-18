@@ -18,8 +18,8 @@ substitutions:
   deep_sleep_run_duration: "3min"
   dashboard_refresh_interval: "10min"
 
-  # Lovelace Kindle Screensaver server (must be a numeric IPv4 address)
-  dashboard_renderer_host: "192.168.86.52"
+  # Lovelace Kindle Screensaver server (must be a numeric IPv4 address in secrets.yaml)
+  dashboard_renderer_host: !secret ha_ip
   dashboard_renderer_port: "5000"
   dashboard_renderer_request_path: "/?clearCache=1&refresh=1"
   dashboard_renderer_wait: "40s"
@@ -819,36 +819,3 @@ deep_sleep:
       - number: GPIO3
         allow_other_uses: true
     mode: ANY_LOW
-
-button:
-  - platform: template
-    name: "Check for dashboard update"
-    id: check_dashboard_update
-    icon: mdi:download
-    entity_category: diagnostic
-    on_press:
-      then:
-        - component.update: ha_dashboard_image
-
-  - platform: template
-    name: "Force display repaint"
-    id: force_display_repaint
-    icon: mdi:monitor
-    entity_category: diagnostic
-    on_press:
-      then:
-        - it8951.update:
-            id: epaper_display
-            mode: GC16
-        - lambda: |-
-            auto now = id(ha_time).utcnow();
-            if (now.is_valid()) {
-              id(display_last_updated).publish_state(
-                now.strftime("%Y-%m-%dT%H:%M:%SZ")
-              );
-            }
-
-  - platform: restart
-    name: "Restart"
-    entity_category: diagnostic
-# === END OF RETERMINAL E1003 CONFIGURATION ===
