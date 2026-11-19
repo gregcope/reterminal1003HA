@@ -1,4 +1,3 @@
-```yaml
 kiosk_mode:
   hide_sidebar: true
   hide_header: true
@@ -21,8 +20,9 @@ views:
                 content: |
                   {% set rem = now().minute % 5 %}
                   {% set t = now() + timedelta(minutes=(5 - rem) if rem in [0, 1] else 0) %}
+                  {% set mins = states('input_number.reterminal_update_interval') | int(60) %}
                   # {{ t.strftime('%H:%M') }}
-                  ### {{ t.strftime('%A, %d %B %Y') }}
+                  ### {{ t.strftime('%A, %d %B %Y') }} ({{ mins }} mins)
               - type: glance
                 show_state: true
                 columns: 5
@@ -225,4 +225,3 @@ views:
                   content: |
                     ### 🌙 Night Mode (23:00 – 07:00)
                     Press right green button to wake.
-```
