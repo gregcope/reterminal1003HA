@@ -1,3 +1,4 @@
+```yaml
 kiosk_mode:
   hide_sidebar: true
   hide_header: true
@@ -18,8 +19,9 @@ views:
             cards:
               - type: markdown
                 content: |
-                  {% set t = now() + timedelta(minutes=(60 - now().minute) if now().minute >= 45 else 0) %}
-                  # {{ t.strftime('%H:00') if (t.minute <= 15) else t.strftime('%H:%M') }}
+                  {% set rem = now().minute % 5 %}
+                  {% set t = now() + timedelta(minutes=(5 - rem) if rem in [0, 1] else 0) %}
+                  # {{ t.strftime('%H:%M') }}
                   ### {{ t.strftime('%A, %d %B %Y') }}
               - type: glance
                 show_state: true
@@ -195,7 +197,7 @@ views:
                   type: markdown
                   content: |
                     ### 🌅 Morning Mode (07:00 – 10:00)
-                    Hourly e-ink refresh enabled.
+                    E-ink refresh every {{ states('input_number.reterminal_update_interval') | int(60) }} min.
               - type: conditional
                 conditions:
                   - entity: input_select.e1003_time_of_day
@@ -204,7 +206,7 @@ views:
                   type: markdown
                   content: |
                     ### ☀️ Daytime Mode (10:00 – 17:00)
-                    Solar and heat pump monitoring active.
+                    Solar and heat pump monitoring active (every {{ states('input_number.reterminal_update_interval') | int(60) }} min).
               - type: conditional
                 conditions:
                   - entity: input_select.e1003_time_of_day
@@ -213,7 +215,7 @@ views:
                   type: markdown
                   content: |
                     ### 🌆 Evening Mode (17:00 – 23:00)
-                    Overnight deep sleep begins at 23:00.
+                    Refreshing every {{ states('input_number.reterminal_update_interval') | int(60) }} min until 23:00.
               - type: conditional
                 conditions:
                   - entity: input_select.e1003_time_of_day
@@ -223,3 +225,4 @@ views:
                   content: |
                     ### 🌙 Night Mode (23:00 – 07:00)
                     Press right green button to wake.
+```

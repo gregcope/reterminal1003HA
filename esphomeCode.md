@@ -12,6 +12,7 @@ substitutions:
   ha_enable_activehours: input_boolean.eink_reterminal_enable_activehours
   ha_activehours_start: input_datetime.eink_reterminal_enable_activehours_start
   ha_activehours_end: input_datetime.eink_reterminal_enable_activehours_end
+  ha_update_interval: input_number.reterminal_update_interval
 
   # Safety values used if Home Assistant or the clock is unavailable
   deep_sleep_fallback_duration: "1h"
@@ -307,6 +308,12 @@ globals:
     restore_value: false
     initial_value: "1380"  # 23:00
 
+  # Daytime update interval in minutes (synced from Home Assistant slider, 5-120 min)
+  - id: update_interval_minutes
+    type: int
+    restore_value: false
+    initial_value: "60"
+
   # Marks whether the current wake cycle has finished downloading
   - id: update_cycle_complete
     type: bool
@@ -314,6 +321,21 @@ globals:
     initial_value: "false"
 
 sensor:
+  # Daytime update interval slider imported from Home Assistant (5 to 120 minutes)
+  - platform: homeassistant
+    id: ha_update_interval
+    entity_id: ${ha_update_interval}
+    on_value:
+      then:
+        - lambda: |-
+            const int mins = static_cast<int>(x + 0.5f);
+            if (mins >= 5 && mins <= 120) {
+              id(update_interval_minutes) = mins;
+              ESP_LOGI("schedule", "Update interval set to %d minutes", mins);
+            } else {
+              ESP_LOGW("schedule", "Ignoring out-of-range interval: %.1f", x);
+            }
+
   # Battery voltage (ADC on GPIO1 with one-to-two divider compensation)
   - platform: adc
     pin: GPIO1
@@ -617,7 +639,7 @@ script:
                 format: "Could not trigger dashboard renderer"
             - script.execute: sleep_if_enabled
 
-  # Calculates seconds until the next top-of-hour inside active hours and sleeps
+  # Calculates seconds until the next configured interval boundary inside active hours and sleeps
   - id: sleep_if_enabled
     mode: single
     then:
@@ -641,14 +663,25 @@ script:
                     return 3600000UL;
                   }
 
+                  int interval_mins = id(update_interval_minutes);
+                  if (interval_mins < 5) interval_mins = 5;
+                  if (interval_mins > 120) interval_mins = 120;
+                  const uint32_t interval_seconds =
+                    static_cast<uint32_t>(interval_mins) * 60UL;
+                  const uint32_t drift_guard =
+                    interval_seconds <= 300UL ? 90UL : 120UL;
+
                   const uint32_t seconds_now =
                     now.hour * 3600UL + now.minute * 60UL + now.second;
-                  uint32_t seconds_to_hour = 3600UL - (seconds_now % 3600UL);
-                  // Roll forward if within three minutes of the hour to avoid :59 drift double-wakes
-                  if (seconds_to_hour <= 180UL) seconds_to_hour += 3600UL;
-                  seconds_to_hour += 10UL;
+                  uint32_t seconds_to_next =
+                    interval_seconds - (seconds_now % interval_seconds);
+                  // Roll forward if just before a boundary to avoid early-RTC double-wakes
+                  if (seconds_to_next <= drift_guard) {
+                    seconds_to_next += interval_seconds;
+                  }
+                  seconds_to_next += 10UL;
 
-                  uint32_t sleep_seconds = seconds_to_hour;
+                  uint32_t sleep_seconds = seconds_to_next;
                   const bool use_active_hours =
                     id(ha_enable_activehours).has_state() &&
                     id(ha_enable_activehours).state;
@@ -658,16 +691,19 @@ script:
                     const int end_minutes = id(activehours_end_minutes);
 
                     if (start_minutes != end_minutes) {
-                      uint32_t next_allowed_hour = 0;
-                      for (int i = 0; i < 48; i++) {
-                        const uint32_t candidate = seconds_to_hour + i * 3600UL;
+                      uint32_t next_allowed_wake = 0;
+                      const int max_steps =
+                        static_cast<int>((48UL * 3600UL) / interval_seconds) + 2;
+                      for (int i = 0; i < max_steps; i++) {
+                        const uint32_t candidate =
+                          seconds_to_next + static_cast<uint32_t>(i) * interval_seconds;
                         const int candidate_minutes =
-                          ((seconds_now + candidate) % 86400UL) / 60UL;
+                          static_cast<int>(((seconds_now + candidate) % 86400UL) / 60UL);
                         const bool allowed = start_minutes < end_minutes
                           ? candidate_minutes >= start_minutes && candidate_minutes < end_minutes
                           : candidate_minutes >= start_minutes || candidate_minutes < end_minutes;
                         if (allowed) {
-                          next_allowed_hour = candidate;
+                          next_allowed_wake = candidate;
                           break;
                         }
                       }
@@ -679,17 +715,18 @@ script:
                           : 86400UL - seconds_now + start_seconds;
                       seconds_to_start += 10UL;
 
-                      if (next_allowed_hour == 0 || seconds_to_start < next_allowed_hour) {
+                      if (next_allowed_wake == 0 || seconds_to_start < next_allowed_wake) {
                         sleep_seconds = seconds_to_start;
                       } else {
-                        sleep_seconds = next_allowed_hour;
+                        sleep_seconds = next_allowed_wake;
                       }
                     }
                   }
 
                   ESP_LOGI(
                     "sleep_schedule",
-                    "Sleeping %lu seconds; next wake at %02u:%02u",
+                    "Interval %d min; sleeping %lu seconds; next wake at %02u:%02u",
+                    interval_mins,
                     (unsigned long) sleep_seconds,
                     (unsigned) ((seconds_now + sleep_seconds) % 86400UL / 3600UL),
                     (unsigned) (((seconds_now + sleep_seconds) % 3600UL) / 60UL)
@@ -819,3 +856,36 @@ deep_sleep:
       - number: GPIO3
         allow_other_uses: true
     mode: ANY_LOW
+
+button:
+  - platform: template
+    name: "Check for dashboard update"
+    id: check_dashboard_update
+    icon: mdi:download
+    entity_category: diagnostic
+    on_press:
+      then:
+        - component.update: ha_dashboard_image
+
+  - platform: template
+    name: "Force display repaint"
+    id: force_display_repaint
+    icon: mdi:monitor
+    entity_category: diagnostic
+    on_press:
+      then:
+        - it8951.update:
+            id: epaper_display
+            mode: GC16
+        - lambda: |-
+            auto now = id(ha_time).utcnow();
+            if (now.is_valid()) {
+              id(display_last_updated).publish_state(
+                now.strftime("%Y-%m-%dT%H:%M:%SZ")
+              );
+            }
+
+  - platform: restart
+    name: "Restart"
+    entity_category: diagnostic
+# === END OF RETERMINAL E1003 CONFIGURATION ===
