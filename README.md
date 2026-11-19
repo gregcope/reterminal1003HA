@@ -28,8 +28,11 @@ A low-power, monochrome Home Assistant dashboard for the **Seeed Studio reTermin
 
 1. Enable packages in your Home Assistant `configuration.yaml` if not already enabled:
    ```yaml
-   homeassistant:
-     packages: !include_dir_named packages
+   rest_command:
+    trigger_reterminal_renderer:
+      url: "http://homeassistant.local:5000/?clearCache=1&refresh=1"
+      method: GET
+      timeout: 60
    ```
 2. Copy the YAML block from `home_assistant_package_pre_render_automation.md` into `/config/packages/reterminal_e1003_package.yaml` (or create the helpers and automation via **Settings > Devices & services > Helpers** and **Settings > Automations & scenes**).
 3. Update `192.168.86.52:5000` in `rest_command.trigger_reterminal_renderer` if your Home Assistant host uses a different IPv4 address.
@@ -50,6 +53,7 @@ A low-power, monochrome Home Assistant dashboard for the **Seeed Studio reTermin
    wifi_password: "YOUR_WIFI_PASSWORD"
    ha_ip: "192.168.1.100"
    api_key: "YOUR_32_BYTE_BASE64_API_KEY"
+   ota_password: "WHATYOUROTAKEYIS"  
    ```
    - `ha_ip` must be the numeric IPv4 address of the host running **Lovelace Kindle Screensaver** on port `5000`.
    - `secrets.yaml` is excluded in `.gitignore` so credentials are never committed to GitHub.
