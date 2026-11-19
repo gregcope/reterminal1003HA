@@ -7,6 +7,7 @@ views:
   - title: Main
     path: main
     type: panel
+    theme: eink_mono
     cards:
       - type: grid
         square: false
