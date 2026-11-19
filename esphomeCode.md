@@ -64,7 +64,7 @@ esphome:
             id(force_display_after_download) = false;
             id(renderer_trigger_sent) = false;
 
-    # Read hardware RTC and sample battery voltage
+    # Read hardware RTC and sample battery voltage once before Wi-Fi transmits
     - priority: 600
       then:
         - pcf8563.read_time:
@@ -133,10 +133,6 @@ logger:
 api:
   encryption:
     key: !secret api_key
-  on_client_connected:
-    then:
-      # Re-sample and publish battery percentage once Home Assistant connects
-      - script.execute: sample_battery
 
 ota:
   - platform: esphome
@@ -336,13 +332,14 @@ sensor:
               ESP_LOGW("schedule", "Ignoring out-of-range interval: %.1f", x);
             }
 
-  # Battery voltage (ADC on GPIO1 with one-to-two divider compensation)
+  # Battery voltage (16-sample averaged ADC on GPIO1 with one-to-two divider compensation)
   - platform: adc
     pin: GPIO1
     name: "Battery Voltage"
     id: battery_voltage
     update_interval: never
     attenuation: 12db
+    samples: 16
     accuracy_decimals: 2
     device_class: voltage
     state_class: measurement
