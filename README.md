@@ -20,40 +20,40 @@ A low-power, monochrome Home Assistant dashboard for the **Seeed Studio reTermin
 3. **HACS Frontend Cards:**
    - `kiosk-mode` (hides the Home Assistant sidebar and header on the rendered view; bypass with `?disable_km` when editing).
    - `apexcharts-card` (renders the 24-hour multi-line power chart and 12-hour temperature trend).
-4. If on a Mac you will need the CH34X USB-to-Serial MacOS Driver See https://wiki.seeedstudio.com/getting_started_with_reterminal_e1003
+4. **macOS USB Driver:** If you are on a Mac, install the CH34X USB-to-Serial macOS driver (see the [Seeed Studio reTerminal E1003 wiki](https://wiki.seeedstudio.com/getting_started_with_reterminal_e1003)).
 
 ## Installation
 
 ### Step One: Add Home Assistant Helpers, REST Command and Automation
 
-1. Enable packages in your Home Assistant `configuration.yaml` if not already enabled:
+1. Add the REST command (with `timeout: 60` so Home Assistant waits for the screenshot render) to your Home Assistant `configuration.yaml`:
    ```yaml
    rest_command:
-    trigger_reterminal_renderer:
-      url: "http://homeassistant.local:5000/?clearCache=1&refresh=1"
-      method: GET
-      timeout: 60
+     trigger_reterminal_renderer:
+       url: "[http://homeassistant.local:5000/?clearCache=1&refresh=1](http://homeassistant.local:5000/?clearCache=1&refresh=1)"
+       method: GET
+       timeout: 60
    ```
 2. Copy the YAML block from `home_assistant_package_pre_render_automation.md` into `/config/packages/reterminal_e1003_package.yaml` (or create the helpers and automation via **Settings > Devices & services > Helpers** and **Settings > Automations & scenes**).
-3. Update `192.168.86.52:5000` in `rest_command.trigger_reterminal_renderer` if your Home Assistant host uses a different IPv4 address.
+3. Update `homeassistant.local:5000` in `rest_command.trigger_reterminal_renderer` if your renderer runs on a different host or IPv4 address.
 4. Restart Home Assistant (or reload YAML configurations under **Developer Tools > YAML**).
 
 ### Step Two: Create the Lovelace Dashboard
 
 1. In Home Assistant, go to **Settings > Dashboards > Add Dashboard**, set the title to **reTerminal E1003** and set the URL path to `reterminal-e1003`.
-2. Open `http://<YOUR_HA_IP>:8123/reterminal-e1003/main?disable_km`, click the pencil **Edit** icon, open the three-dot menu in the top-right corner and select **Raw configuration editor**.
+2. Open `http://homeassistant.local:8123/reterminal-e1003/main?disable_km` (replacing `homeassistant.local` with your Home Assistant IPv4 address if required), click the pencil **Edit** icon, open the three-dot menu in the top-right corner and select **Raw configuration editor**.
 3. Paste the YAML block from `lovelace_monochrome_dashboard.md`, substitute any sensor entity IDs specific to your home and click **Save**.
 
 ### Step Three: Create `secrets.yaml` from the Template
 
 1. Copy `secrets.yaml.example` to `secrets.yaml` (or open **Secrets** in the top-right corner of **ESPHome Builder** in Home Assistant).
-2. Replace the four placeholder values with your own details:
+2. Replace the five placeholder values with your own details:
    ```yaml
    wifi_ssid: "YOUR_WIFI_SSID"
    wifi_password: "YOUR_WIFI_PASSWORD"
    ha_ip: "192.168.1.100"
    api_key: "YOUR_32_BYTE_BASE64_API_KEY"
-   ota_password: "WHATYOUROTAKEYIS"  
+   ota_password: "YOUR_OTA_PASSWORD"
    ```
    - `ha_ip` must be the numeric IPv4 address of the host running **Lovelace Kindle Screensaver** on port `5000`.
    - `secrets.yaml` is excluded in `.gitignore` so credentials are never committed to GitHub.
