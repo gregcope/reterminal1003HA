@@ -54,6 +54,7 @@ A low-power, monochrome Home Assistant dashboard for the **Seeed Studio reTermin
    wifi_password: "YOUR_WIFI_PASSWORD"
    ha_ip: "192.168.1.100"
    api_key: "YOUR_32_BYTE_BASE64_API_KEY"
+   ota_password: "YOUR_OTA_PASSWORD"
    ```
    - `ha_ip` must be the numeric IPv4 address of the host running **Lovelace Kindle Screensaver** on port `5000`[cite: 2].
    - `secrets.yaml` is excluded in `.gitignore` so credentials are never committed to GitHub[cite: 2].
