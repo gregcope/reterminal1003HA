@@ -1,12 +1,12 @@
+kiosk_mode:
+  hide_sidebar: true
+  hide_header: true
+  admin_settings:
+    ignore_kiosk_mode: true
 views:
   - title: Main
     path: main
     type: panel
-    kiosk_mode:
-      hide_sidebar: true
-      hide_header: true
-      admin_settings:
-        ignore_kiosk_mode: true
     cards:
       - type: grid
         square: false
@@ -19,7 +19,7 @@ views:
                 content: |
                   {% set rem = now().minute % 5 %}
                   {% set t = now() + timedelta(minutes=(5 - rem) if rem in [0, 1] else 0) %}
-                  {% set mins = states('number.living_room_reterminal_e1003_update_interval') | int(60) %}
+                  {% set mins = states('input_number.reterminal_update_interval') | int(60) %}
                   # {{ t.strftime('%H:%M') }}
                   ### {{ t.strftime('%A, %d %B %Y') }} ({{ mins }} mins)
               - type: glance
@@ -196,7 +196,7 @@ views:
                   type: markdown
                   content: |
                     ### 🌅 Morning Mode (07:00 – 10:00)
-                    E-ink refresh every {{ states('number.living_room_reterminal_e1003_update_interval') | int(60) }} min.
+                    E-ink refresh every {{ states('input_number.reterminal_update_interval') | int(60) }} min.
               - type: conditional
                 conditions:
                   - entity: input_select.e1003_time_of_day
@@ -205,7 +205,7 @@ views:
                   type: markdown
                   content: |
                     ### ☀️ Daytime Mode (10:00 – 17:00)
-                    Solar and heat pump monitoring active (every {{ states('number.living_room_reterminal_e1003_update_interval') | int(60) }} min).
+                    Solar and heat pump monitoring active (every {{ states('input_number.reterminal_update_interval') | int(60) }} min).
               - type: conditional
                 conditions:
                   - entity: input_select.e1003_time_of_day
@@ -214,7 +214,7 @@ views:
                   type: markdown
                   content: |
                     ### 🌆 Evening Mode (17:00 – 23:00)
-                    Refreshing every {{ states('number.living_room_reterminal_e1003_update_interval') | int(60) }} min until 23:00.
+                    Refreshing every {{ states('input_number.reterminal_update_interval') | int(60) }} min until 23:00.
               - type: conditional
                 conditions:
                   - entity: input_select.e1003_time_of_day

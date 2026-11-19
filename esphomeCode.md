@@ -12,6 +12,7 @@ substitutions:
   ha_enable_activehours: input_boolean.eink_reterminal_enable_activehours
   ha_activehours_start: input_datetime.eink_reterminal_enable_activehours_start
   ha_activehours_end: input_datetime.eink_reterminal_enable_activehours_end
+  ha_update_interval: input_number.reterminal_update_interval
 
   # Safety values used if Home Assistant or the clock is unavailable
   deep_sleep_fallback_duration: "1h"
@@ -303,7 +304,7 @@ globals:
     restore_value: false
     initial_value: "1380"  # 23:00
 
-  # Daytime update interval in minutes (synced from native number slider, 5-120 min)
+  # Daytime update interval in minutes (synced from input_number helper, 5-120 min)
   - id: update_interval_minutes
     type: int
     restore_value: false
@@ -315,32 +316,22 @@ globals:
     restore_value: false
     initial_value: "false"
 
-number:
-  # Native slider published on the reTerminal E1003 device in Home Assistant (5 to 120 min)
-  - platform: template
-    id: update_interval_slider
-    name: "Update Interval"
-    icon: mdi:timer-refresh-outline
-    unit_of_measurement: "min"
-    mode: slider
-    min_value: 5
-    max_value: 120
-    step: 5
-    initial_value: 60
-    optimistic: true
-    restore_value: true
+sensor:
+  # Daytime update interval helper imported from Home Assistant (5 to 120 min)
+  - platform: homeassistant
+    id: ha_update_interval
+    entity_id: ${ha_update_interval}
     on_value:
       then:
         - lambda: |-
             const int mins = static_cast<int>(x + 0.5f);
             if (mins >= 5 && mins <= 120) {
               id(update_interval_minutes) = mins;
-              ESP_LOGI("schedule", "Update interval set to %d minutes", mins);
+              ESP_LOGI("schedule", "Update interval synced: %d minutes", mins);
             } else {
               ESP_LOGW("schedule", "Ignoring out-of-range interval: %.1f", x);
             }
 
-sensor:
   # Battery voltage (16-sample averaged ADC on GPIO1 with one-to-two divider compensation)
   - platform: adc
     pin: GPIO1
