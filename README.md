@@ -20,6 +20,7 @@ A low-power, monochrome Home Assistant dashboard for the **Seeed Studio reTermin
 3. **HACS Frontend Cards:**
    - `kiosk-mode` (hides the Home Assistant sidebar and header on the rendered view; bypass with `?disable_km` when editing).
    - `apexcharts-card` (renders the 24-hour multi-line power chart and 12-hour temperature trend).
+4. If on a Mac you will need the CH34X USB-to-Serial MacOS Driver
 
 ## Installation
 
